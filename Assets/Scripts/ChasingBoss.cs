@@ -6,47 +6,75 @@ public class ChasingBoss : MonoBehaviour
     [SerializeField] private Transform player;
 
     [Header("Movement")]
-    [SerializeField] private float spawnDistance = 10f; // от игрока
-    [SerializeField] private float moveSpeed = 3f;      // скорость преследования
-    [SerializeField] private float rotateSpeed = 5f;    // плавное вращение к игроку
+    [SerializeField] private float spawnDistance = 10f;
+    [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float rotateSpeed = 5f;
+
+    [Header("Disappear Settings")]
+    [SerializeField] private float disappearTime = 10f; // время без контакта до исчезновения
 
     private bool isActive = false;
+    private CharacterController controller;
+    private float timeSinceContact = 0f;
 
     void Start()
     {
+        controller = GetComponent<CharacterController>();
+        if (controller == null)
+            controller = gameObject.AddComponent<CharacterController>();
+
         if (player == null)
         {
             Debug.LogError("ChasingBoss: Player not assigned!");
             return;
         }
 
-        // Спавним на случайной позиции от игрока
+        // Спавн на случайной позиции от игрока
         Vector2 randomCircle = Random.insideUnitCircle.normalized * spawnDistance;
         Vector3 spawnPos = player.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
-
         transform.position = spawnPos;
+
         isActive = true;
     }
 
     void Update()
     {
-        if (!isActive) return;
+        if (!isActive || player == null) return;
 
-        // Плавное вращение к игроку
-        Vector3 direction = (player.position - transform.position).normalized;
-        if (direction != Vector3.zero)
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0f;
+        float distance = direction.magnitude;
+
+        if (distance > 0.5f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
-        }
+            // Босс ещё не упёрся в игрока — двигаемся
+            direction.Normalize();
 
-        // Двигаемся к игроку
-        transform.position += transform.forward * moveSpeed * Time.deltaTime;
+            if (direction != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
+            }
+
+            controller.Move(transform.forward * moveSpeed * Time.deltaTime);
+
+            // Считаем время без контакта
+            timeSinceContact += Time.deltaTime;
+            if (timeSinceContact >= disappearTime)
+            {
+                // исчезаем
+                gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            // Босс упёрся в игрока
+            timeSinceContact = 0f; // сброс таймера
+        }
     }
 
     public void SetPlayer(Transform playerTransform)
     {
         player = playerTransform;
     }
-
 }
