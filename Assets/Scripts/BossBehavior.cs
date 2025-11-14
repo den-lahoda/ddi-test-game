@@ -92,7 +92,7 @@ public class BossBehavior : MonoBehaviour
             ChasingBoss cb = newBoss.GetComponent<ChasingBoss>();
             if (cb != null)
             {
-                cb.SetPlayer(player); // передадим ссылку на игрока
+                cb.SetPlayer(player); // передадим ссылку на  игрока
             }
         }
 
