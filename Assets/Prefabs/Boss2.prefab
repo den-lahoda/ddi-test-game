@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8857048983850009225}
   - component: {fileID: 7770825581718819924}
   - component: {fileID: -558035385428129392}
+  - component: {fileID: 44055534904269408}
   m_Layer: 0
   m_Name: Boss2
   m_TagString: Untagged
@@ -99,6 +100,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Boss2Movement
   speed: 3
   player: {fileID: 0}
+--- !u!114 &44055534904269408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4719257504813115340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3309c19bc304a5045bddc930de1aef3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossDamage
+  damagePerSecond: 10
 --- !u!1001 &6164700819223678247
 PrefabInstance:
   m_ObjectHideFlags: 0
