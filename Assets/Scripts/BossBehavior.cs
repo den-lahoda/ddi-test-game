@@ -11,8 +11,8 @@ public class BossBehavior : MonoBehaviour
     [SerializeField] private float moveBackDistance = 3f;
     [SerializeField] private float vanishDuration = 2f;
 
-    [Header("Spawn Chasing Boss")]
-    [SerializeField] private GameObject chasingBossPrefab;
+    [Header("Spawn Settings")]
+    [SerializeField] private GameObject bossPrefabToSpawn;
 
     private bool isVanishing = false;
     private Material bossMaterial;
@@ -30,8 +30,7 @@ public class BossBehavior : MonoBehaviour
 
         if (bossMaterial.HasProperty("_Color"))
         {
-            // Делаем материал прозрачным, чтобы alpha работала
-            bossMaterial.SetFloat("_Mode", 3); // Standard shader: 3 = Transparent
+            bossMaterial.SetFloat("_Mode", 3); // Standard shader: Transparent
             Color c = bossMaterial.color;
             c.a = 1f;
             bossMaterial.color = c;
@@ -48,7 +47,7 @@ public class BossBehavior : MonoBehaviour
 
     void Update()
     {
-        if (isVanishing || hasAppeared) return;
+        if (isVanishing || hasAppeared || player == null) return;
 
         float dist = Vector3.Distance(player.position, transform.position);
 
@@ -63,7 +62,7 @@ public class BossBehavior : MonoBehaviour
     private IEnumerator VanishEffect()
     {
         // фиксированное направление влево
-        vanishDirection = Vector3.left; 
+        vanishDirection = Vector3.left;
         Vector3 startPos = transform.position;
         Vector3 targetPos = startPos + vanishDirection * moveBackDistance;
 
@@ -85,17 +84,12 @@ public class BossBehavior : MonoBehaviour
         }
 
         gameObject.SetActive(false);
-        // Спавним второго босса
-        if (chasingBossPrefab != null)
+
+        // Спавним новый босс, если есть префаб
+        if (bossPrefabToSpawn != null)
         {
-            GameObject newBoss = Instantiate(chasingBossPrefab);
-            ChasingBoss cb = newBoss.GetComponent<ChasingBoss>();
-            if (cb != null)
-            {
-                cb.SetPlayer(player); // передадим ссылку на  игрока
-            }
+            GameObject newBoss = Instantiate(bossPrefabToSpawn, transform.position, Quaternion.identity);
+            // Любая логика нового босса должна быть в его собственном скрипте
         }
-
     }
-
 }
