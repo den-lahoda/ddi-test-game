@@ -3,78 +3,126 @@ using UnityEngine;
 [RequireComponent(typeof(Light))]
 public class PlayerFlashlightHorror : MonoBehaviour
 {
-    [Header("Toggle Settings")]
+    [Header("Toggle")]
     public KeyCode toggleKey = KeyCode.F;
-    private Light flashlight;
-    private bool isOn = false;
 
-    [Header("Base Intensity (URP Lumens)")]
-    public float baseIntensity = 2500f;
+    [Header("Intensity")]
+    public float maxIntensity = 6f;
+    public float minIntensity = 0.3f;
 
-    [Header("Flicker Settings (percent)")]
-    [Range(0f, 0.5f)]
-    public float flickerPercent = 0.1f; // 10%
+    [Header("Distance Dimming")]
+    public float fullIntensityDistance = 3.5f;
+    public float closeDistance = 0.5f;
+    public LayerMask dimmingLayers; // стены
 
-    public float flickerSpeed = 20f;
+    [Header("Flicker")]
+    [Range(0f, 0.15f)]
+    public float flickerAmount = 0.05f;
+    public float flickerSpeed = 10f;
 
-    [Header("Sway Settings")]
-    public float swayAmount = 0.4f;
-    public float swaySpeed = 2f;
+    [Header("Sway (Mouse Based)")]
+    public float swayAmount = 1.2f;
+    public float swaySmooth = 6f;
 
-    [Header("Sound Settings")]
+    [Header("Sound")]
     public AudioSource audioSource;
     public AudioClip soundOn;
     public AudioClip soundOff;
 
-    private Vector3 initialRotation;
+    private Light flashlight;
+    private Camera cam;
+    private bool isOn;
 
-    void Start()
+    private Vector3 baseRotation;
+    private Vector2 currentSway;
+    private Vector2 swayVelocity;
+
+    void Awake()
     {
         flashlight = GetComponent<Light>();
-        flashlight.intensity = baseIntensity;
-        flashlight.enabled = isOn;
-        initialRotation = transform.localEulerAngles;
+        cam = GetComponentInParent<Camera>();
+
+        flashlight.enabled = false;
+        flashlight.intensity = maxIntensity;
+        baseRotation = transform.localEulerAngles;
     }
 
     void Update()
     {
         HandleToggle();
 
-        if (isOn)
-        {
-            HandleFlicker();
-            HandleSway();
-        }
+        if (!isOn) return;
+
+        ApplyDistanceDimming();
+        ApplyFlicker();
+        ApplyMouseSway();
     }
 
-    private void HandleToggle()
+    void HandleToggle()
     {
         if (Input.GetKeyDown(toggleKey))
         {
             isOn = !isOn;
             flashlight.enabled = isOn;
 
-            if (audioSource != null)
-            {
-                if (isOn && soundOn != null)
-                    audioSource.PlayOneShot(soundOn);
-                else if (!isOn && soundOff != null)
-                    audioSource.PlayOneShot(soundOff);
-            }
+            if (audioSource)
+                audioSource.PlayOneShot(isOn ? soundOn : soundOff);
         }
     }
 
-    private void HandleFlicker()
+    void ApplyDistanceDimming()
     {
-        float flicker = 1f + Mathf.PerlinNoise(Time.time * flickerSpeed, 0f) * flickerPercent;
-        flashlight.intensity = baseIntensity * flicker;
+        float targetIntensity = maxIntensity;
+
+        Ray ray = new Ray(cam.transform.position, cam.transform.forward);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, fullIntensityDistance, dimmingLayers))
+        {
+            // Проверяем, что мы СМОТРИМ на поверхность, а не скользим лучом
+            float angle = Vector3.Angle(-hit.normal, cam.transform.forward);
+
+            if (angle < 45f) // только если почти прямо
+            {
+                float t = Mathf.InverseLerp(closeDistance, fullIntensityDistance, hit.distance);
+                targetIntensity = Mathf.Lerp(minIntensity, maxIntensity, t);
+            }
+        }
+
+        flashlight.intensity = Mathf.Lerp(
+            flashlight.intensity,
+            targetIntensity,
+            Time.deltaTime * 8f
+        );
     }
 
-    private void HandleSway()
+    void ApplyFlicker()
     {
-        float swayX = Mathf.Sin(Time.time * swaySpeed) * swayAmount;
-        float swayY = Mathf.Cos(Time.time * swaySpeed * 1.3f) * swayAmount;
+        float noise = Mathf.PerlinNoise(Time.time * flickerSpeed, 0f);
+        float flicker = Mathf.Lerp(1f - flickerAmount, 1f, noise);
+        flashlight.intensity *= flicker;
+    }
 
-        transform.localEulerAngles = initialRotation + new Vector3(swayX, swayY, 0);
+    void ApplyMouseSway()
+    {
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
+
+        Vector2 targetSway = new Vector2(
+            -mouseY * swayAmount,
+            mouseX * swayAmount
+        );
+
+        currentSway = Vector2.SmoothDamp(
+            currentSway,
+            targetSway,
+            ref swayVelocity,
+            1f / swaySmooth
+        );
+
+        transform.localEulerAngles = baseRotation + new Vector3(
+            currentSway.x,
+            currentSway.y,
+            0f
+        );
     }
 }
