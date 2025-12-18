@@ -8,24 +8,30 @@ public class PlayerFlashlightHorror : MonoBehaviour
     private Light flashlight;
     private bool isOn = false;
 
+    [Header("Base Intensity (URP Lumens)")]
+    public float baseIntensity = 2500f;
+
+    [Header("Flicker Settings (percent)")]
+    [Range(0f, 0.5f)]
+    public float flickerPercent = 0.1f; // 10%
+
+    public float flickerSpeed = 20f;
+
+    [Header("Sway Settings")]
+    public float swayAmount = 0.4f;
+    public float swaySpeed = 2f;
+
     [Header("Sound Settings")]
     public AudioSource audioSource;
     public AudioClip soundOn;
     public AudioClip soundOff;
-
-    [Header("Drift / Flicker Settings")]
-    public float flickerIntensityMin = 1.8f;
-    public float flickerIntensityMax = 2.2f;
-    public float flickerSpeed = 0.1f;
-
-    public float swayAmount = 1f;
-    public float swaySpeed = 2f;
 
     private Vector3 initialRotation;
 
     void Start()
     {
         flashlight = GetComponent<Light>();
+        flashlight.intensity = baseIntensity;
         flashlight.enabled = isOn;
         initialRotation = transform.localEulerAngles;
     }
@@ -48,7 +54,6 @@ public class PlayerFlashlightHorror : MonoBehaviour
             isOn = !isOn;
             flashlight.enabled = isOn;
 
-            // --- Воспроизведение звука ---
             if (audioSource != null)
             {
                 if (isOn && soundOn != null)
@@ -61,7 +66,8 @@ public class PlayerFlashlightHorror : MonoBehaviour
 
     private void HandleFlicker()
     {
-        flashlight.intensity = Random.Range(flickerIntensityMin, flickerIntensityMax);
+        float flicker = 1f + Mathf.PerlinNoise(Time.time * flickerSpeed, 0f) * flickerPercent;
+        flashlight.intensity = baseIntensity * flicker;
     }
 
     private void HandleSway()
