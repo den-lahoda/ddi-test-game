@@ -4,45 +4,55 @@ using System.Collections;
 public class BossBehavior : MonoBehaviour
 {
     [Header("Player & Trigger")]
-    [SerializeField] private Transform player;
-    [SerializeField] private float vanishDistance = 10f;
+
+    [SerializeField, Tooltip("Transform игрока. До него измеряется расстояние, чтобы запустить исчезновение.")]
+    private Transform player;
+
+    [SerializeField, Tooltip("Дистанция до игрока, при которой босс начинает исчезать.")]
+    private float vanishDistance = 10f;
+
 
     [Header("Vanish Settings")]
-    [SerializeField] private float moveBackDistance = 3f;
-    [SerializeField] private float vanishDuration = 2f;
+
+    [SerializeField, Tooltip("На сколько юнитов сместить босса в сторону исчезновения во время эффекта.")]
+    private float moveBackDistance = 3f;
+
+    [SerializeField, Tooltip("Длительность растворения и смещения (в секундах).")]
+    private float vanishDuration = 2f;
+
 
     [Header("Spawn Settings")]
-    [SerializeField] private GameObject bossPrefabToSpawn;
+
+    [SerializeField, Tooltip("Префаб нового босса, который появится после исчезновения. Можно оставить пустым.")]
+    private GameObject bossPrefabToSpawn;
+
 
     private bool isVanishing = false;
     private Material bossMaterial;
     private Color startColor;
     private Vector3 vanishDirection;
 
-    // Контроль единственного появления для всей сцены
+    // Глобальный флаг: босс может появиться только один раз на сцене
     private static bool hasAppeared = false;
 
     void Start()
     {
-        // Получаем материал и включаем поддержку прозрачности
         bossMaterial = GetComponent<Renderer>().material;
         startColor = bossMaterial.color;
 
         if (bossMaterial.HasProperty("_Color"))
         {
-            bossMaterial.SetFloat("_Mode", 3); // Standard shader: Transparent
+            bossMaterial.SetFloat("_Mode", 3);
             Color c = bossMaterial.color;
             c.a = 1f;
             bossMaterial.color = c;
+
             bossMaterial.EnableKeyword("_ALPHABLEND_ON");
             bossMaterial.renderQueue = 3000;
         }
 
-        // Если босс уже появлялся, сразу скрываем
         if (hasAppeared)
-        {
             gameObject.SetActive(false);
-        }
     }
 
     void Update()
@@ -61,8 +71,8 @@ public class BossBehavior : MonoBehaviour
 
     private IEnumerator VanishEffect()
     {
-        // фиксированное направление влево
         vanishDirection = Vector3.left;
+
         Vector3 startPos = transform.position;
         Vector3 targetPos = startPos + vanishDirection * moveBackDistance;
 
@@ -72,10 +82,8 @@ public class BossBehavior : MonoBehaviour
         {
             float t = elapsed / vanishDuration;
 
-            // Плавное движение
             transform.position = Vector3.Lerp(startPos, targetPos, t);
 
-            // Плавное растворение
             float alpha = Mathf.Lerp(1f, 0f, t);
             bossMaterial.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
 
@@ -85,11 +93,7 @@ public class BossBehavior : MonoBehaviour
 
         gameObject.SetActive(false);
 
-        // Спавним новый босс, если есть префаб
         if (bossPrefabToSpawn != null)
-        {
-            GameObject newBoss = Instantiate(bossPrefabToSpawn, transform.position, Quaternion.identity);
-            // Любая логика нового босса должна быть в его собственном скрипте
-        }
+            Instantiate(bossPrefabToSpawn, transform.position, Quaternion.identity);
     }
 }

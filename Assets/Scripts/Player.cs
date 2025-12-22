@@ -4,23 +4,49 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [Header("Movement Settings")]
+
+    [Tooltip("Базовая скорость передвижения игрока")]
     public float speed = 5f;
+
+    [Tooltip("Множитель скорости при зажатом Shift")]
     public float sprintMultiplier = 1.5f;
+
+    [Tooltip("Высота прыжка в юнитах Unity")]
     public float jumpHeight = 2f;
+
+    [Tooltip("Сила гравитации (должна быть отрицательной)")]
     public float gravity = -9.81f;
 
+
     [Header("Camera Settings")]
+
+    [Tooltip("Камера игрока (обязательно назначить)")]
     public Camera playerCamera;
+
+    [Tooltip("Чувствительность мыши")]
     public float mouseSensitivity = 2f;
+
+    [Tooltip("Максимальный угол поворота камеры вверх и вниз")]
     public float verticalRotationLimit = 80f;
 
+
     [Header("Ground Check")]
+
+    [Tooltip("Точка проверки касания земли (обычно у ног игрока)")]
     public Transform groundCheck;
+
+    [Tooltip("Радиус проверки земли")]
     public float groundDistance = 0.2f;
+
+    [Tooltip("Слои, которые считаются землёй")]
     public LayerMask groundMask;
 
+
     [Header("Jump Buffer")]
+
+    [Tooltip("Время, в течение которого прыжок запоминается")]
     public float jumpBufferTime = 0.2f;
+
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -41,7 +67,7 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        // Обновляем буфер прыжка
+        // Буфер прыжка
         if (Input.GetButtonDown("Jump"))
             jumpBufferCounter = jumpBufferTime;
         else
@@ -60,26 +86,27 @@ public class Player : MonoBehaviour
         if (move.magnitude > 1f) move.Normalize();
         move = transform.TransformDirection(move);
 
-        // ускорение при беге
         float currentSpeed = speed;
-        if (Input.GetKey(KeyCode.LeftShift)) currentSpeed *= sprintMultiplier;
+        if (Input.GetKey(KeyCode.LeftShift))
+            currentSpeed *= sprintMultiplier;
 
         controller.Move(move * currentSpeed * Time.deltaTime);
 
-        // проверка на землю через Ground Check
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        isGrounded = Physics.CheckSphere(
+            groundCheck.position,
+            groundDistance,
+            groundMask
+        );
 
         if (isGrounded && velocity.y < 0f)
-            velocity.y = -2f; // небольшое отрицательное значение для устойчивости
+            velocity.y = -2f;
 
-        // прыжок с буфером
         if (jumpBufferCounter > 0f && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             jumpBufferCounter = 0f;
         }
 
-        // гравитация
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
@@ -91,19 +118,15 @@ public class Player : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        // горизонтальный поворот игрока
         transform.Rotate(Vector3.up * mouseX);
 
-        // вертикальный поворот камеры
         rotationX -= mouseY;
         rotationX = Mathf.Clamp(rotationX, -verticalRotationLimit, verticalRotationLimit);
-        playerCamera.transform.localEulerAngles = new Vector3(rotationX, 0f, 0f);
 
-        // камера на голове игрока
+        playerCamera.transform.localEulerAngles = new Vector3(rotationX, 0f, 0f);
         playerCamera.transform.position = transform.position + Vector3.up * 1.0f;
     }
 
-    // Визуализация Ground Check в сцене (не обязательно)
     private void OnDrawGizmosSelected()
     {
         if (groundCheck != null)

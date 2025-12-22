@@ -4,30 +4,62 @@ using UnityEngine;
 public class PlayerFlashlightHorror : MonoBehaviour
 {
     [Header("Toggle")]
+
+    [Tooltip("Клавиша включения и выключения фонарика")]
     public KeyCode toggleKey = KeyCode.F;
 
+
     [Header("Intensity")]
+
+    [Tooltip("Максимальная яркость фонаря")]
     public float maxIntensity = 6f;
+
+    [Tooltip("Минимальная яркость, когда фонарь почти вплотную к стене")]
     public float minIntensity = 0.3f;
 
+
     [Header("Distance Dimming")]
+
+    [Tooltip("Дистанция, на которой фонарь светит с полной яркостью")]
     public float fullIntensityDistance = 3.5f;
+
+    [Tooltip("Минимальная дистанция до поверхности для максимального затемнения")]
     public float closeDistance = 0.5f;
-    public LayerMask dimmingLayers; // стены
+
+    [Tooltip("Слои объектов, которые затемняют свет (например: стены)")]
+    public LayerMask dimmingLayers;
+
 
     [Header("Flicker")]
+
+    [Tooltip("Сила мерцания фонаря (0 — без мерцания)")]
     [Range(0f, 0.15f)]
     public float flickerAmount = 0.05f;
+
+    [Tooltip("Скорость изменения мерцания")]
     public float flickerSpeed = 10f;
 
+
     [Header("Sway (Mouse Based)")]
+
+    [Tooltip("Амплитуда покачивания фонаря от движения мыши")]
     public float swayAmount = 1.2f;
+
+    [Tooltip("Плавность возврата фонаря (чем больше — тем плавнее)")]
     public float swaySmooth = 6f;
 
+
     [Header("Sound")]
+
+    [Tooltip("Источник звука для щелчка фонаря")]
     public AudioSource audioSource;
+
+    [Tooltip("Звук включения фонаря")]
     public AudioClip soundOn;
+
+    [Tooltip("Звук выключения фонаря")]
     public AudioClip soundOff;
+
 
     private Light flashlight;
     private Camera cam;
@@ -78,10 +110,9 @@ public class PlayerFlashlightHorror : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, fullIntensityDistance, dimmingLayers))
         {
-            // Проверяем, что мы СМОТРИМ на поверхность, а не скользим лучом
             float angle = Vector3.Angle(-hit.normal, cam.transform.forward);
 
-            if (angle < 45f) // только если почти прямо
+            if (angle < 45f)
             {
                 float t = Mathf.InverseLerp(closeDistance, fullIntensityDistance, hit.distance);
                 targetIntensity = Mathf.Lerp(minIntensity, maxIntensity, t);
